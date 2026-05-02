@@ -1,0 +1,30 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>로그인</title>
+</head>
+<body>
+<h1>로그인</h1>
+<form id="f">
+    <input name="email" placeholder="이메일"><br>
+    <input name="password" type="password" placeholder="비밀번호"><br>
+    <button>로그인</button>
+</form>
+<script>
+document.getElementById('f').onsubmit = async e => {
+    e.preventDefault();
+    const fd = Object.fromEntries(new FormData(e.target));
+    const r = await fetch('/api/auth/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(fd)
+    });
+    const j = await r.json();
+    if (!j.success) return alert(j.message);
+    localStorage.setItem('token', j.data.accessToken);
+    location.href = '/';
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: seat-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: seatapp
+      MYSQL_USER: seat
+      MYSQL_PASSWORD: seat1234
+      TZ: Asia/Seoul
+    ports:
+      - "3309:3306"
+    volumes:
+      - seat-mysql-data:/var/lib/mysql
+      - ../db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+09:00
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: seat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - seat-redis-data:/data
+
+volumes:
+  seat-mysql-data:
+  seat-redis-data:

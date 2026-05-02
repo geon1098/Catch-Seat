@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><title>좌석 선택</title>
+    <style>
+        .seat { display:inline-block; width:60px; height:60px; margin:6px;
+                line-height:60px; text-align:center; border:1px solid #999;
+                cursor:pointer; user-select:none; }
+        .AVAILABLE { background:#cfc; }
+        .HOLD      { background:#fc9; cursor:not-allowed; }
+        .RESERVED  { background:#999; color:#fff; cursor:not-allowed; }
+        .CANCELLED { background:#fff; color:#bbb; }
+    </style>
+</head>
+<body>
+<h1>좌석 선택</h1>
+<p><a href="/">← 목록</a> | <span id="authNav"></span></p>
+<div id="grid"></div>
+<hr>
+<button id="reserveBtn" disabled>예약 요청</button>
+<button id="payBtn" disabled>결제하기</button>
+<p id="msg"></p>
+
+<script th:inline="javascript">
+const eventId = [[${eventId}]];
+let selectedSeatId = null;
+let currentReservationId = null;
+const token = () => localStorage.getItem('token');
+
+function renderAuthNav() {
+    const nav = document.getElementById('authNav');
+    if (token()) {
+        nav.innerHTML = '<a href="#" id="logoutLink">로그아웃</a>';
+        document.getElementById('logoutLink').onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            location.reload();
+        };
+    } else {
+        nav.innerHTML = '<a href="/login">로그인</a> | <a href="/signup">회원가입</a>';
+    }
+}
+renderAuthNav();
+
+async function load() {
+    const r = await fetch('/api/events/' + eventId + '/seats');
+    const j = await r.json();
+    const g = document.getElementById('grid');
+    g.innerHTML = '';
+    j.data.forEach(s => {
+        const d = document.createElement('div');
+        d.className = 'seat ' + s.status;
+        d.textContent = s.seatNo;
+        d.dataset.id = s.id;
+        d.dataset.status = s.status;
+        if (s.status === 'AVAILABLE') {
+            d.onclick = () => {
+                selectedSeatId = s.id;
+                document.getElementById('reserveBtn').disabled = false;
+                document.querySelectorAll('.seat').forEach(x => x.style.outline = '');
+                d.style.outline = '3px solid red';
+                document.getElementById('msg').textContent = s.seatNo + ' 선택됨';
+            };
+        }
+        g.appendChild(d);
+    });
+}
+
+document.getElementById('reserveBtn').onclick = async () => {
+    if (!token()) { alert('로그인이 필요합니다.'); return location.href='/login'; }
+    const r = await fetch('/api/reservations', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token()},
+        body: JSON.stringify({ seatId: selectedSeatId })
+    });
+    const j = await r.json();
+    if (!j.success) { alert(j.message); return load(); }
+    currentReservationId = j.data.reservationId;
+    document.getElementById('payBtn').disabled = false;
+    document.getElementById('msg').textContent = '예약 성공! 5분 안에 결제하세요. (예약 ID '+currentReservationId+')';
+    load();
+};
+
+document.getElementById('payBtn').onclick = async () => {
+    const r = await fetch('/api/payments', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token()},
+        body: JSON.stringify({ reservationId: currentReservationId, amount: 50000 })
+    });
+    const j = await r.json();
+    alert(j.success ? '결제 완료!' : '결제 실패: '+j.message);
+    document.getElementById('payBtn').disabled = true;
+    load();
+};
+
+load();
+setInterval(load, 3000);   // 3초마다 좌석 상태 갱신
+</script>
+</body>
+</html>

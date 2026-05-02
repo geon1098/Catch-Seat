@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: seat-platform
+
+  datasource:
+    url: jdbc:mysql://localhost:3309/seatapp?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: seat
+    password: seat1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20            # 동시성 테스트 시 커넥션 모자라면 안 됨
+      connection-timeout: 5000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate                # 스키마는 init.sql 로 관리, JPA 는 검증만
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:my-very-long-secret-key-for-seat-app-do-not-use-in-prod-please-change-me}
+    access-expiration-minutes: 60
+  reservation:
+    hold-seconds: 300                  # HOLD 상태 5분 후 자동 만료
+
+logging:
+  level:
+    root: INFO
+    com.seat.backend: DEBUG
+    org.hibernate.SQL: DEBUG
+
+server:
+  port: 8099

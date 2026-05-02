@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><title>공연 목록</title>
+</head>
+<body>
+<h1>다가오는 공연</h1>
+<div id="authNav"></div>
+<hr>
+<ul id="events"></ul>
+<script>
+function renderAuthNav() {
+    const nav = document.getElementById('authNav');
+    if (localStorage.getItem('token')) {
+        nav.innerHTML = '<a href="#" id="logoutLink">로그아웃</a>';
+        document.getElementById('logoutLink').onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            location.reload();
+        };
+    } else {
+        nav.innerHTML = '<a href="/login">로그인</a> | <a href="/signup">회원가입</a>';
+    }
+}
+renderAuthNav();
+
+fetch('/api/events').then(r => r.json()).then(res => {
+    const ul = document.getElementById('events');
+    res.data.forEach(ev => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="/events/${ev.id}/seats">${ev.title} (${ev.startAt})</a>`;
+        ul.appendChild(li);
+    });
+});
+</script>
+</body>
+</html>
